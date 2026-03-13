@@ -12,6 +12,7 @@ export interface LineBootstrapState {
   profile: LineProfile | null
   accessToken: string | null
   error: string | null
+  needsLogin?: boolean
 }
 
 export interface ServiceNotificationToken {

@@ -26,15 +26,19 @@ export async function bootstrapLine(): Promise<LineBootstrapState> {
     await liff.init({ liffId: appConfig.liffId })
 
     if (!liff.isLoggedIn()) {
-      liff.login()
-      return baseState
+      return {
+        ...baseState,
+        isReady: true,
+        isLoggedIn: false,
+        needsLogin: true
+      }
     }
 
     const profile = await liff.getProfile()
 
     return {
       isReady: true,
-      isLoggedIn: liff.isLoggedIn(),
+      isLoggedIn: true,
       isInClient: liff.isInClient(),
       profile: {
         userId: profile.userId,
