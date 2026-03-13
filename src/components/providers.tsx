@@ -38,10 +38,12 @@ function LineProvider({ children }: { children: ReactNode }) {
 
   if (!lineState.isReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-line border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-sm text-slate-500">กำลังโหลด...</p>
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-surface-secondary">
+        <div className="flex flex-col items-center gap-4">
+          <div className="gradient-card flex h-16 w-16 items-center justify-center rounded-2xl shadow-glow">
+            <div className="h-6 w-6 animate-spin rounded-full border-3 border-white border-t-transparent" />
+          </div>
+          <p className="text-sm font-medium text-slate-500">กำลังเตรียมระบบ...</p>
         </div>
       </div>
     )
@@ -49,10 +51,12 @@ function LineProvider({ children }: { children: ReactNode }) {
 
   if (lineState.needsLogin) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-line border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-sm text-slate-500">กำลังเข้าสู่ระบบ...</p>
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-surface-secondary">
+        <div className="flex flex-col items-center gap-4">
+          <div className="gradient-card flex h-16 w-16 items-center justify-center rounded-2xl shadow-glow">
+            <div className="h-6 w-6 animate-spin rounded-full border-3 border-white border-t-transparent" />
+          </div>
+          <p className="text-sm font-medium text-slate-500">กำลังเข้าสู่ระบบ LINE...</p>
         </div>
       </div>
     )
@@ -60,9 +64,15 @@ function LineProvider({ children }: { children: ReactNode }) {
 
   if (lineState.error) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-sm text-red-600">{lineState.error}</p>
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-surface-secondary px-6">
+        <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-card">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+            <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="mt-3 text-sm font-semibold text-slate-900">เกิดข้อผิดพลาด</p>
+          <p className="mt-1 text-xs text-slate-500">{lineState.error}</p>
         </div>
       </div>
     )

@@ -1,32 +1,30 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useLineContext } from '@/components/providers'
 import { AppShell } from '@/components/miniapp/AppShell'
 import { MemberCard } from '@/components/miniapp/MemberCard'
 import { ProfileForm } from '@/components/miniapp/ProfileForm'
 import { VerifiedOnlyNotice } from '@/components/miniapp/VerifiedOnlyNotice'
-import { bootstrapLine, getMiniAppCapabilities } from '@/lib/line-miniapp'
+import { getMiniAppCapabilities } from '@/lib/line-miniapp'
 import { checkMember, getMemberCard, updateMemberProfile } from '@/lib/member-api'
 import { getQuickFillUnavailableReason } from '@/lib/common-profile'
 import type { MemberUpdatePayload } from '@/types/member'
 
-export function ProfileClient() {
-  const [lineUserId, setLineUserId] = useState('')
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
-  const capabilities = useMemo(() => getMiniAppCapabilities(), [])
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="skeleton h-48 w-full" />
+      <div className="skeleton h-64 w-full" />
+    </div>
+  )
+}
 
-  useEffect(() => {
-    void (async () => {
-      const state = await bootstrapLine()
-      if (state.profile?.userId) {
-        setLineUserId(state.profile.userId)
-      }
-      if (state.error) {
-        setBootstrapError(state.error)
-      }
-    })()
-  }, [])
+export function ProfileClient() {
+  const line = useLineContext()
+  const lineUserId = line.profile?.userId || ''
+  const capabilities = useMemo(() => getMiniAppCapabilities(), [])
 
   useQuery({
     queryKey: ['member-check', lineUserId],
@@ -46,22 +44,20 @@ export function ProfileClient() {
       void memberQuery.refetch()
       window.alert('บันทึกข้อมูลสมาชิกสำเร็จ')
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       window.alert(error instanceof Error ? error.message : 'บันทึกข้อมูลไม่สำเร็จ')
     }
   })
 
   return (
-    <AppShell title="Member Profile" subtitle="จัดการข้อมูลสมาชิกและดูสถานะแต้มสะสม">
-      {bootstrapError ? <VerifiedOnlyNotice title="LINE bootstrap issue" description={bootstrapError} /> : null}
+    <AppShell title="โปรไฟล์สมาชิก" subtitle="จัดการข้อมูลสมาชิกและดูสถานะแต้มสะสม">
+      {line.error ? <VerifiedOnlyNotice title="LINE bootstrap issue" description={line.error} /> : null}
 
       {!capabilities.canUseQuickFill ? (
         <VerifiedOnlyNotice title="Quick-fill ยังไม่เปิดใช้" description={getQuickFillUnavailableReason()} />
       ) : null}
 
-      {!lineUserId || memberQuery.isLoading ? (
-        <div className="rounded-[1.75rem] bg-white p-5 text-sm text-slate-500 shadow-soft">กำลังโหลดข้อมูลสมาชิก...</div>
-      ) : null}
+      {!lineUserId || memberQuery.isLoading ? <LoadingSkeleton /> : null}
 
       {memberQuery.data?.member && memberQuery.data?.tier ? (
         <>

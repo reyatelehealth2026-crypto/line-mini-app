@@ -1,3 +1,4 @@
+import { Gift, Sparkles } from 'lucide-react'
 import type { RewardItem } from '@/types/rewards'
 
 type RewardCardProps = {
@@ -7,43 +8,45 @@ type RewardCardProps = {
 }
 
 export function RewardCard({ reward, disabled, onRedeem }: RewardCardProps) {
+  const outOfStock = reward.stock === 0
   const stockLabel =
     reward.stock === null || reward.stock === undefined || reward.stock < 0
-      ? 'ไม่จำกัด'
+      ? null
       : reward.stock === 0
-        ? 'หมด'
-        : `${reward.stock} ชิ้น`
+        ? 'หมดแล้ว'
+        : `เหลือ ${reward.stock}`
 
   return (
-    <article className="overflow-hidden rounded-[1.75rem] bg-white shadow-soft">
-      <div className="aspect-[4/3] bg-slate-100">
+    <article className="group animate-fade-in overflow-hidden rounded-3xl bg-white shadow-soft transition-shadow hover:shadow-card">
+      <div className="relative aspect-[5/3] overflow-hidden bg-slate-100">
         <img
-          src={reward.image_url || 'https://placehold.co/600x450?text=Reward'}
+          src={reward.image_url || 'https://placehold.co/600x360/f1f5f9/94a3b8?text=Reward'}
           alt={reward.name}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
+        <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-line shadow-sm backdrop-blur-sm">
+          <Sparkles size={12} />
+          {reward.points_required.toLocaleString()}
+        </div>
+        {stockLabel ? (
+          <div className={`absolute right-3 top-3 badge ${outOfStock ? 'badge-red' : 'badge-green'}`}>
+            {stockLabel}
+          </div>
+        ) : null}
       </div>
       <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">{reward.name}</h3>
-            <p className="mt-1 text-sm text-slate-500">{reward.description || 'ของรางวัลสำหรับสมาชิก'}</p>
-          </div>
-          <span className="rounded-full bg-line-soft px-3 py-1 text-xs font-semibold text-line">
-            {reward.points_required.toLocaleString()} แต้ม
-          </span>
-        </div>
-        <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
-          <span>ประเภท: {reward.reward_type || 'reward'}</span>
-          <span>คงเหลือ: {stockLabel}</span>
-        </div>
+        <h3 className="font-semibold text-slate-900 leading-snug">{reward.name}</h3>
+        {reward.description ? (
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{reward.description}</p>
+        ) : null}
         <button
           type="button"
-          disabled={disabled || reward.stock === 0}
+          disabled={disabled || outOfStock}
           onClick={() => onRedeem(reward.id)}
-          className="mt-4 w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="btn-primary mt-3 w-full text-sm"
         >
-          แลกของรางวัล
+          <Gift size={16} />
+          {outOfStock ? 'ของรางวัลหมด' : 'แลกเลย'}
         </button>
       </div>
     </article>

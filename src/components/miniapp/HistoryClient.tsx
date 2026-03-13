@@ -1,28 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useLineContext } from '@/components/providers'
 import { AppShell } from '@/components/miniapp/AppShell'
 import { RedemptionHistoryList } from '@/components/miniapp/RedemptionHistoryList'
 import { VerifiedOnlyNotice } from '@/components/miniapp/VerifiedOnlyNotice'
-import { bootstrapLine } from '@/lib/line-miniapp'
 import { getMyRedemptions } from '@/lib/rewards-api'
 
-export function HistoryClient() {
-  const [lineUserId, setLineUserId] = useState('')
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null)
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="skeleton h-24 w-full rounded-3xl" />
+      ))}
+    </div>
+  )
+}
 
-  useEffect(() => {
-    void (async () => {
-      const state = await bootstrapLine()
-      if (state.profile?.userId) {
-        setLineUserId(state.profile.userId)
-      }
-      if (state.error) {
-        setBootstrapError(state.error)
-      }
-    })()
-  }, [])
+export function HistoryClient() {
+  const line = useLineContext()
+  const lineUserId = line.profile?.userId || ''
 
   const historyQuery = useQuery({
     queryKey: ['reward-history', lineUserId],
@@ -31,14 +28,14 @@ export function HistoryClient() {
   })
 
   return (
-    <AppShell title="Redemption History" subtitle="ติดตามสถานะการแลกรางวัลของสมาชิก">
-      {bootstrapError ? <VerifiedOnlyNotice title="LINE bootstrap issue" description={bootstrapError} /> : null}
+    <AppShell title="ประวัติการแลก" subtitle="ติดตามสถานะการแลกรางวัลของคุณ">
+      {line.error ? <VerifiedOnlyNotice title="LINE bootstrap issue" description={line.error} /> : null}
 
-      {historyQuery.isLoading ? (
-        <div className="rounded-[1.75rem] bg-white p-5 text-sm text-slate-500 shadow-soft">กำลังโหลดประวัติการแลก...</div>
+      {historyQuery.isLoading ? <LoadingSkeleton /> : null}
+
+      {!historyQuery.isLoading ? (
+        <RedemptionHistoryList items={historyQuery.data?.redemptions || []} />
       ) : null}
-
-      <RedemptionHistoryList items={historyQuery.data?.redemptions || []} />
     </AppShell>
   )
 }
