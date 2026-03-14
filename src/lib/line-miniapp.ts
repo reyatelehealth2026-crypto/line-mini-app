@@ -71,3 +71,22 @@ export function getMiniAppCapabilities(): MiniAppCapabilities {
 export function getLineSdk() {
   return liff
 }
+
+export async function shareTextOnMiniApp(text: string) {
+  const sdk = getLineSdk() as unknown as {
+    isApiAvailable?: (apiName: string) => boolean
+    shareTargetPicker?: (messages: Array<{ type: 'text'; text: string }>) => Promise<unknown>
+  }
+
+  if (sdk.isApiAvailable?.('shareTargetPicker') && sdk.shareTargetPicker) {
+    await sdk.shareTargetPicker([{ type: 'text', text }])
+    return 'line'
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    await navigator.share({ text })
+    return 'web'
+  }
+
+  throw new Error('อุปกรณ์นี้ยังไม่รองรับการแชร์')
+}

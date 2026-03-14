@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useLineContext } from '@/components/providers'
 import { AppShell } from '@/components/miniapp/AppShell'
 import { MemberCard } from '@/components/miniapp/MemberCard'
+import { MiniAppPerksCard } from '@/components/miniapp/MiniAppPerksCard'
 import { OdooAccountCard, OdooAccountNotLinked } from '@/components/miniapp/OdooAccountCard'
 import { OrderCenterCard } from '@/components/miniapp/OrderCenterCard'
 import { VerifiedOnlyNotice } from '@/components/miniapp/VerifiedOnlyNotice'
@@ -53,6 +54,7 @@ export function ProfileClient() {
       {memberQuery.data?.member && memberQuery.data?.tier ? (
         <>
           <MemberCard member={memberQuery.data.member} tier={memberQuery.data.tier} />
+          <MiniAppPerksCard member={memberQuery.data.member} tier={memberQuery.data.tier} />
 
           {/* Odoo Account Section */}
           {linkedOdooProfile ? (
