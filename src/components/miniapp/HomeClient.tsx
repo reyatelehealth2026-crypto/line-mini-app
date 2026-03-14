@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, Gift, Package, Star, UserRound } from 'lucide-react'
+import { ChevronRight, Gift, Link2, Package, Star, UserRound } from 'lucide-react'
 import { useLineContext } from '@/components/providers'
 import { BottomNav } from '@/components/miniapp/BottomNav'
 import { getMemberCard } from '@/lib/member-api'
 import { getMyOrders } from '@/lib/orders-api'
+import { getOdooProfile } from '@/lib/odoo-profile-api'
 
 function QuickAction({ href, icon: Icon, label, description, color }: {
   href: string
@@ -47,6 +48,14 @@ export function HomeClient() {
     enabled: Boolean(lineUserId)
   })
 
+  const odooProfileQuery = useQuery({
+    queryKey: ['odoo-profile', lineUserId],
+    queryFn: () => getOdooProfile(lineUserId),
+    enabled: Boolean(lineUserId),
+    retry: false
+  })
+
+  const odooProfile = odooProfileQuery.data?.success ? odooProfileQuery.data.data : null
   const member = memberQuery.data?.member
   const tier = memberQuery.data?.tier
   const recentOrders = ordersQuery.data?.orders || []
@@ -124,6 +133,26 @@ export function HomeClient() {
             />
           </div>
         </section>
+
+        {/* Odoo Account Summary */}
+        {odooProfile ? (
+          <section>
+            <p className="section-title mb-3">บัญชี Odoo</p>
+            <Link href="/profile" className="group flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-soft transition-shadow hover:shadow-card">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-line-soft">
+                <Link2 size={20} className="text-line" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-900">{odooProfile.partner_name || '-'}</p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  รหัส <span className="font-mono font-semibold">{odooProfile.customer_code || '-'}</span>
+                  {odooProfile.phone ? ` · ${odooProfile.phone}` : ''}
+                </p>
+              </div>
+              <ChevronRight size={16} className="text-slate-300 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </section>
+        ) : null}
 
         {/* Recent Orders */}
         {recentOrders.length > 0 ? (
