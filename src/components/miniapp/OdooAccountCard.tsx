@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { ExternalLink, FileText, Link2, Package, Receipt, Truck, Wallet } from 'lucide-react'
+import { ExternalLink, Link2 } from 'lucide-react'
 import { getOdooLinkUrl } from '@/lib/odoo-profile-api'
 import type { OdooCustomerProfile } from '@/types/odoo-profile'
 
@@ -12,22 +11,6 @@ function linkedViaLabel(linkedVia: string) {
     case 'email': return 'อีเมล'
     default: return linkedVia
   }
-}
-
-function QuickActionBtn({ icon: Icon, label, href }: {
-  icon: typeof Package
-  label: string
-  href: string
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex flex-col items-center gap-2 rounded-2xl bg-slate-50 p-4 transition-colors hover:bg-slate-100"
-    >
-      <Icon size={22} className="text-line" />
-      <span className="text-xs font-semibold text-slate-700">{label}</span>
-    </Link>
-  )
 }
 
 type OdooAccountCardProps = {
@@ -101,32 +84,11 @@ export function OdooAccountCard({ profile }: OdooAccountCardProps) {
 
       {/* Quick Actions Grid */}
       <div className="border-t border-slate-100 px-5 py-4">
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          <QuickActionBtn
-            icon={Package}
-            label="ประวัติสั่งซื้อ"
-            href="/orders"
-          />
-          <QuickActionBtn
-            icon={Truck}
-            label="ติดตามพัสดุ"
-            href="/orders"
-          />
-          <QuickActionBtn
-            icon={FileText}
-            label="ใบแจ้งหนี้"
-            href="/invoices"
-          />
-          <QuickActionBtn
-            icon={Receipt}
-            label="แจ้งโอนเงิน"
-            href="/slip"
-          />
-          <QuickActionBtn
-            icon={Wallet}
-            label="สถานะเครดิต"
-            href="/credit-status"
-          />
+        <div className="rounded-2xl bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium text-slate-500">การใช้งาน Odoo</p>
+          <p className="mt-1 text-sm text-slate-700">
+            ใช้งานออเดอร์ ใบแจ้งหนี้ แจ้งโอน และสถานะเครดิตได้ที่ <span className="font-semibold text-line">ศูนย์การสั่งซื้อ</span> ด้านล่าง
+          </p>
         </div>
       </div>
     </div>
