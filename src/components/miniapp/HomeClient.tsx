@@ -1,13 +1,18 @@
 'use client'
 
 import Link from 'next/link'
-import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, Gift, Link2, Package, Star, UserRound } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useRef } from 'react'
+import { ChevronRight, Gift, Link2, Package, Receipt, Star, UserRound } from 'lucide-react'
 import { useLineContext } from '@/components/providers'
 import { BottomNav } from '@/components/miniapp/BottomNav'
+import { FlashSaleCountdown } from '@/components/miniapp/FlashSaleCountdown'
+import { ReferralCard } from '@/components/miniapp/ReferralCard'
+import { ServiceMessageBanner } from '@/components/miniapp/ServiceMessageBanner'
 import { getMemberCard } from '@/lib/member-api'
 import { getMyOrders } from '@/lib/orders-api'
 import { getOdooProfile } from '@/lib/odoo-profile-api'
+import { usePullToRefresh } from '@/lib/hooks'
 
 function QuickAction({ href, icon: Icon, label, description, color }: {
   href: string
@@ -30,11 +35,20 @@ function QuickAction({ href, icon: Icon, label, description, color }: {
   )
 }
 
+function greetingByTime(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'อรุณสวัสดิ์'
+  if (h < 17) return 'สวัสดีตอนบ่าย'
+  return 'สวัสดีตอนเย็น'
+}
+
 export function HomeClient() {
   const line = useLineContext()
   const lineUserId = line.profile?.userId || ''
   const displayName = line.profile?.displayName || 'LINE User'
   const avatar = line.profile?.pictureUrl
+  const queryClient = useQueryClient()
+  const mainRef = useRef<HTMLElement>(null)
 
   const memberQuery = useQuery({
     queryKey: ['member-card', lineUserId],
@@ -60,10 +74,20 @@ export function HomeClient() {
   const tier = memberQuery.data?.tier
   const recentOrders = ordersQuery.data?.orders || []
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['member-card', lineUserId] }),
+      queryClient.invalidateQueries({ queryKey: ['my-orders-summary', lineUserId] }),
+      queryClient.invalidateQueries({ queryKey: ['odoo-profile', lineUserId] }),
+    ])
+  }, [queryClient, lineUserId])
+
+  const { isRefreshing, pullY } = usePullToRefresh(handleRefresh, mainRef)
+
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-surface-secondary">
+    <div className="fixed inset-0 flex flex-col bg-surface-secondary">
       {/* Hero Header */}
-      <header className="gradient-card safe-top px-5 pb-8 pt-5">
+      <header className="shrink-0 gradient-card safe-top px-5 pb-8">
         <div className="mx-auto max-w-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -75,7 +99,7 @@ export function HomeClient() {
                 </div>
               )}
               <div>
-                <p className="text-sm text-white/70">สวัสดี</p>
+                <p className="text-sm text-white/70">{greetingByTime()}</p>
                 <p className="text-lg font-bold text-white">{displayName}</p>
               </div>
             </div>
@@ -105,7 +129,28 @@ export function HomeClient() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto -mt-3 flex w-full max-w-md flex-1 flex-col gap-5 px-4 pb-28">
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto overscroll-none">
+        {/* Pull-to-refresh indicator */}
+        <div
+          className="flex items-end justify-center overflow-hidden transition-all duration-200"
+          style={{ height: isRefreshing ? 44 : Math.min(pullY, 44) }}
+        >
+          <div className="flex items-center gap-2 pb-2 text-xs font-medium text-slate-400">
+            <div className={`h-3.5 w-3.5 rounded-full border-2 border-line border-t-transparent ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'กำลังโหลด...' : pullY >= 70 ? 'ปล่อยเพื่อรีเฟรช' : ''}</span>
+          </div>
+        </div>
+        <div className="mx-auto -mt-3 flex w-full max-w-md flex-col gap-5 px-4 pb-8">
+        {/* Notification Banner */}
+        <ServiceMessageBanner />
+
+        {/* Flash Sale (demo — swap endsAt for real date from API) */}
+        <FlashSaleCountdown
+          endsAt={new Date(Date.now() + 6 * 3600 * 1000)}
+          title="โปรสมาชิก Flash"
+          discount="ลด 15% ทุกออเดอร์วันนี้"
+        />
+
         {/* Quick Actions */}
         <section>
           <p className="section-title mb-3">เมนูหลัก</p>
@@ -121,15 +166,22 @@ export function HomeClient() {
               href="/rewards"
               icon={Gift}
               label="แลกของรางวัล"
-              description="ใช้แต้มแลกสิทธิประโยชน์"
+              description={member ? `มี ${member.points.toLocaleString()} แต้มใช้ได้` : 'ใช้แต้มแลกสิทธิประโยชน์'}
               color="bg-line-soft text-line"
             />
             <QuickAction
               href="/orders"
               icon={Package}
               label="ออเดอร์ของฉัน"
-              description="ติดตามสถานะคำสั่งซื้อจาก Odoo"
+              description={recentOrders.length > 0 ? `${recentOrders.length} ส่งล่าสุด` : 'ติดตามสถานะคำสั่งซื้อ'}
               color="bg-purple-50 text-purple-600"
+            />
+            <QuickAction
+              href="/slip"
+              icon={Receipt}
+              label="แจ้งโอนเงิน"
+              description="อัพโหลดหลักฐานการชำระเงิน"
+              color="bg-orange-50 text-orange-600"
             />
           </div>
         </section>
@@ -181,6 +233,12 @@ export function HomeClient() {
             </div>
           </section>
         ) : null}
+
+        {/* Referral */}
+        {member ? (
+          <ReferralCard memberId={member.member_id} displayName={displayName} />
+        ) : null}
+        </div>
       </main>
 
       <BottomNav />

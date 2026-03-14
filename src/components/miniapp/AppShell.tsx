@@ -1,20 +1,40 @@
-import type { ReactNode } from 'react'
+'use client'
+
+import { useRef, type ReactNode } from 'react'
 import { BottomNav } from '@/components/miniapp/BottomNav'
 import { MiniAppHeader } from '@/components/miniapp/MiniAppHeader'
+import { usePullToRefresh } from '@/lib/hooks'
 
 type AppShellProps = {
   title: string
   subtitle?: string
   showAvatar?: boolean
+  onRefresh?: () => Promise<void>
   children: ReactNode
 }
 
-export function AppShell({ title, subtitle, showAvatar, children }: AppShellProps) {
+export function AppShell({ title, subtitle, showAvatar, onRefresh, children }: AppShellProps) {
+  const mainRef = useRef<HTMLElement>(null)
+  const { isRefreshing, pullY } = usePullToRefresh(onRefresh, mainRef)
+
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-surface-secondary">
+    <div className="fixed inset-0 flex flex-col bg-surface-secondary">
       <MiniAppHeader title={title} subtitle={subtitle} showAvatar={showAvatar} />
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-4 px-4 pb-28 pt-5">
-        {children}
+      <main ref={mainRef} className="relative flex-1 overflow-y-auto overscroll-none">
+        {onRefresh && (
+          <div
+            className="flex items-end justify-center overflow-hidden transition-all duration-200"
+            style={{ height: isRefreshing ? 44 : Math.min(pullY, 44) }}
+          >
+            <div className="flex items-center gap-2 pb-2 text-xs font-medium text-slate-400">
+              <div className={`h-3.5 w-3.5 rounded-full border-2 border-line border-t-transparent ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>{isRefreshing ? 'กำลังโหลด...' : pullY >= 70 ? 'ปล่อยเพื่อรีเฟรช' : ''}</span>
+            </div>
+          </div>
+        )}
+        <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-4 pb-8 pt-5">
+          {children}
+        </div>
       </main>
       <BottomNav />
     </div>

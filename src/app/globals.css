@@ -18,6 +18,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
 * {
@@ -37,11 +38,11 @@ textarea {
 }
 
 .safe-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 0.5rem);
 }
 
 .safe-top {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  padding-top: max(env(safe-area-inset-top, 0px), 0.75rem);
 }
 
 @layer components {

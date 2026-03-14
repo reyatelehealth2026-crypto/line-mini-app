@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { type ReactNode, useState, useEffect, createContext, useContext } from 'react'
 import { bootstrapLine } from '@/lib/line-miniapp'
 import type { LineBootstrapState } from '@/types/line'
+import { ToastProvider } from '@/lib/toast'
+import { ToastContainer } from '@/components/miniapp/ToastContainer'
 
 const LineContext = createContext<LineBootstrapState | null>(null)
 
@@ -96,8 +98,11 @@ export function Providers({ children }: { children: ReactNode }) {
   )
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <LineProvider>{children}</LineProvider>
-    </QueryClientProvider>
+    <ToastProvider>
+      <ToastContainer />
+      <QueryClientProvider client={queryClient}>
+        <LineProvider>{children}</LineProvider>
+      </QueryClientProvider>
+    </ToastProvider>
   )
 }

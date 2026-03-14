@@ -1,4 +1,4 @@
-import { Star, TrendingUp } from 'lucide-react'
+import { Award, Star, TrendingUp } from 'lucide-react'
 import type { MemberProfile, TierInfo } from '@/types/member'
 
 export function MemberCard({ member, tier }: { member: MemberProfile; tier: TierInfo }) {
@@ -47,9 +47,21 @@ export function MemberCard({ member, tier }: { member: MemberProfile; tier: Tier
             style={{ width: `${progress}%` }}
           />
         </div>
-        <p className="mt-2 text-xs text-slate-400">
-          เหลืออีก <span className="font-semibold text-slate-600">{Math.max(tier.points_to_next || 0, 0).toLocaleString()}</span> แต้ม
-        </p>
+        {tier.points_to_next && tier.points_to_next > 0 ? (
+          <p className="mt-2 text-xs text-slate-400">
+            เหลืออีก <span className="font-semibold text-slate-600">{tier.points_to_next.toLocaleString()}</span> แต้ม เพื่อเลื่อนเป็น {tier.next_tier_name}
+          </p>
+        ) : (
+          <p className="mt-2 text-xs font-semibold text-line">คุณอยู่ในระดับสูงสุดแล้ว! ✨</p>
+        )}
+        {tier.discount_percent && tier.discount_percent > 0 ? (
+          <div className="mt-3 flex items-center gap-2 rounded-xl bg-line-soft px-3 py-2">
+            <Award size={14} className="shrink-0 text-line" />
+            <p className="text-xs font-semibold text-line-dark">
+              สิทธิ์ลดราคา {tier.discount_percent}% ทุกไอเทมสำหรับสมาชิก {tier.tier_name}
+            </p>
+          </div>
+        ) : null}
       </div>
     </section>
   )

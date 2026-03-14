@@ -1,10 +1,12 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { Camera, CheckCircle, Loader2, Receipt } from 'lucide-react'
+import { Camera, CheckCircle, Loader2, QrCode, Receipt } from 'lucide-react'
 import { useLineContext } from '@/components/providers'
 import { AppShell } from '@/components/miniapp/AppShell'
 import { uploadSlip } from '@/lib/odoo-invoices-api'
+import { useToast } from '@/lib/toast'
+import { useHaptic } from '@/lib/hooks'
 
 function nowLocalISO() {
   const d = new Date()
@@ -49,6 +51,8 @@ export function SlipUploadClient() {
   const line = useLineContext()
   const lineUserId = line.profile?.userId || ''
   const fileRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+  const haptic = useHaptic()
 
   const [preview, setPreview] = useState<string | null>(null)
   const [base64, setBase64] = useState<string>('')
@@ -57,6 +61,7 @@ export function SlipUploadClient() {
   const [transferDate, setTransferDate] = useState(nowLocalISO)
   const [submitting, setSubmitting] = useState(false)
   const [compressing, setCompressing] = useState(false)
+  const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState<{ matched: boolean; orderName?: string; amount?: number } | null>(null)
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,40 +75,71 @@ export function SlipUploadClient() {
       setBase64(compressed.base64)
       setSizeKB(compressed.sizeKB)
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'ไม่สามารถบีบอัดรูปภาพได้')
+      toast.error(err instanceof Error ? err.message : 'ไม่สามารถอ่านรูปภาพได้')
     } finally {
       setCompressing(false)
     }
-  }, [])
+  }, [toast])
+
+  const handleScanQR = useCallback(async () => {
+    haptic('light')
+    setScanning(true)
+    try {
+      const { default: liff } = await import('@line/liff')
+      if (!liff.isInClient()) {
+        toast.info('สแกนใช้ได้เฉพาะในแอป LINE เท่านั้น')
+        return
+      }
+      const result = await (liff as unknown as { scanCodeV2: () => Promise<{ value: string }> }).scanCodeV2()
+      if (result?.value) {
+        const numericAmount = result.value.replace(/[^0-9.]/g, '')
+        if (numericAmount) {
+          setAmount(numericAmount)
+          toast.success(`สแกนสำเร็จ: ประมาณ ฿${numericAmount}`)
+        } else {
+          toast.info(`ผล: ${result.value.slice(0, 30)}...`)
+        }
+        haptic('medium')
+      }
+    } catch (err) {
+      if (err instanceof Error && !err.message.includes('cancel')) {
+        toast.error('สแกน QR ไม่สำเร็จ')
+      }
+    } finally {
+      setScanning(false)
+    }
+  }, [haptic, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!base64) {
-      window.alert('กรุณาเลือกรูปหลักฐานการโอน')
+      toast.warning('กรุณาเลือกรูปหลักฐานการโอน')
       return
     }
     if (!amount) {
-      window.alert('กรุณาระบุจำนวนเงิน')
+      toast.warning('กรุณาระบุจำนวนเงิน')
       return
     }
 
     setSubmitting(true)
+    haptic('medium')
     try {
       const res = await uploadSlip(lineUserId, base64, amount, transferDate)
       if (res.success) {
         const d = res.data
         const isMatched = d?.matched || d?.status === 'matched'
+        haptic('heavy')
         setResult({
           matched: isMatched ?? false,
           orderName: d?.order_name,
           amount: d?.amount
         })
       } else {
-        window.alert(res.error || 'เกิดข้อผิดพลาดในการอัพโหลด')
+        toast.error(res.error || 'เกิดข้อผิดพลาดในการอัพโหลด')
       }
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด')
+      toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด')
     } finally {
       setSubmitting(false)
     }
@@ -173,13 +209,14 @@ export function SlipUploadClient() {
               ) : (
                 <div className="flex flex-col items-center gap-2 text-slate-400">
                   <Camera size={32} />
-                  <p className="text-sm font-medium">แตะเพื่ออัพโหลดรูปภาพ</p>
+                  <p className="text-sm font-medium">แตะเพื่อเลือกรูปสลิป</p>
                 </div>
               )}
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -189,6 +226,15 @@ export function SlipUploadClient() {
                 ขนาดหลังบีบอัด: {sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`}
               </p>
             ) : null}
+            <button
+              type="button"
+              onClick={() => void handleScanQR()}
+              disabled={scanning}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:border-line hover:bg-line-soft hover:text-line disabled:opacity-50"
+            >
+              {scanning ? <Loader2 size={15} className="animate-spin" /> : <QrCode size={15} />}
+              {scanning ? 'กำลังสแกน...' : 'สแกน QR จากสลิป'}
+            </button>
           </div>
         </div>
 

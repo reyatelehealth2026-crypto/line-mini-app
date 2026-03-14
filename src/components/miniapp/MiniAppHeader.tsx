@@ -14,7 +14,7 @@ export function MiniAppHeader({ title, subtitle, showAvatar = true }: MiniAppHea
   const name = line.profile?.displayName
 
   return (
-    <header className="safe-top gradient-card px-5 pb-7 pt-5 text-white">
+    <header className="shrink-0 safe-top gradient-card px-5 pb-7 text-white">
       <div className="mx-auto max-w-md">
         {showAvatar && (avatar || name) ? (
           <div className="mb-4 flex items-center gap-3">
