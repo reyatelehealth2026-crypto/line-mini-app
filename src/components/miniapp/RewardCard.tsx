@@ -1,13 +1,14 @@
-import { Gift, Sparkles } from 'lucide-react'
+import { Gift, Share2, Sparkles } from 'lucide-react'
 import type { RewardItem } from '@/types/rewards'
 
 type RewardCardProps = {
   reward: RewardItem
   disabled?: boolean
   onRedeem: (rewardId: number) => void
+  onShare: (reward: RewardItem) => void
 }
 
-export function RewardCard({ reward, disabled, onRedeem }: RewardCardProps) {
+export function RewardCard({ reward, disabled, onRedeem, onShare }: RewardCardProps) {
   const outOfStock = reward.stock === 0
   const stockLabel =
     reward.stock === null || reward.stock === undefined || reward.stock < 0
@@ -39,15 +40,25 @@ export function RewardCard({ reward, disabled, onRedeem }: RewardCardProps) {
         {reward.description ? (
           <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{reward.description}</p>
         ) : null}
-        <button
-          type="button"
-          disabled={disabled || outOfStock}
-          onClick={() => onRedeem(reward.id)}
-          className="btn-primary mt-3 w-full text-sm"
-        >
-          <Gift size={16} />
-          {outOfStock ? 'ของรางวัลหมด' : 'แลกเลย'}
-        </button>
+        <div className="mt-3 grid grid-cols-[1fr,auto] gap-2">
+          <button
+            type="button"
+            disabled={disabled || outOfStock}
+            onClick={() => onRedeem(reward.id)}
+            className="btn-primary w-full text-sm"
+          >
+            <Gift size={16} />
+            {outOfStock ? 'ของรางวัลหมด' : 'แลกเลย'}
+          </button>
+          <button
+            type="button"
+            onClick={() => onShare(reward)}
+            className="inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+          >
+            <Share2 size={15} />
+            แชร์
+          </button>
+        </div>
       </div>
     </article>
   )

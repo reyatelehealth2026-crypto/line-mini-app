@@ -73,18 +73,25 @@ export function getLineSdk() {
 }
 
 export async function shareTextOnMiniApp(text: string) {
+  return shareMessagesOnMiniApp([{ type: 'text', text }], text)
+}
+
+export async function shareMessagesOnMiniApp(
+  messages: Array<Record<string, unknown>>,
+  fallbackText?: string
+) {
   const sdk = getLineSdk() as unknown as {
     isApiAvailable?: (apiName: string) => boolean
-    shareTargetPicker?: (messages: Array<{ type: 'text'; text: string }>) => Promise<unknown>
+    shareTargetPicker?: (messages: Array<Record<string, unknown>>) => Promise<unknown>
   }
 
   if (sdk.isApiAvailable?.('shareTargetPicker') && sdk.shareTargetPicker) {
-    await sdk.shareTargetPicker([{ type: 'text', text }])
+    await sdk.shareTargetPicker(messages)
     return 'line'
   }
 
-  if (typeof navigator !== 'undefined' && navigator.share) {
-    await navigator.share({ text })
+  if (typeof navigator !== 'undefined' && navigator.share && fallbackText) {
+    await navigator.share({ text: fallbackText })
     return 'web'
   }
 

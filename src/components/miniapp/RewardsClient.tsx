@@ -1,11 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLineContext } from '@/components/providers'
 import { AppShell } from '@/components/miniapp/AppShell'
+import { RewardShareSheet } from '@/components/miniapp/RewardShareSheet'
 import { RewardsGrid } from '@/components/miniapp/RewardsGrid'
 import { VerifiedOnlyNotice } from '@/components/miniapp/VerifiedOnlyNotice'
 import { getRewards, redeemReward } from '@/lib/rewards-api'
+import type { RewardItem } from '@/types/rewards'
 
 function LoadingSkeleton() {
   return (
@@ -20,6 +23,7 @@ function LoadingSkeleton() {
 export function RewardsClient() {
   const line = useLineContext()
   const lineUserId = line.profile?.userId || ''
+  const [selectedReward, setSelectedReward] = useState<RewardItem | null>(null)
 
   const rewardsQuery = useQuery({
     queryKey: ['rewards-list'],
@@ -46,6 +50,9 @@ export function RewardsClient() {
         <RewardsGrid
           rewards={rewardsQuery.data.rewards}
           disabled={!lineUserId || redeemMutation.isPending}
+          onShare={(reward) => {
+            setSelectedReward(reward)
+          }}
           onRedeem={(rewardId) => {
             if (!lineUserId) {
               window.alert('กรุณาเข้าสู่ระบบ LINE ก่อน')
@@ -55,6 +62,8 @@ export function RewardsClient() {
           }}
         />
       ) : null}
+
+      <RewardShareSheet reward={selectedReward} onClose={() => setSelectedReward(null)} />
     </AppShell>
   )
 }

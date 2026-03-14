@@ -2,7 +2,17 @@ import { PackageOpen } from 'lucide-react'
 import type { RewardItem } from '@/types/rewards'
 import { RewardCard } from '@/components/miniapp/RewardCard'
 
-export function RewardsGrid({ rewards, onRedeem, disabled }: { rewards: RewardItem[]; onRedeem: (rewardId: number) => void; disabled?: boolean }) {
+export function RewardsGrid({
+  rewards,
+  onRedeem,
+  onShare,
+  disabled
+}: {
+  rewards: RewardItem[]
+  onRedeem: (rewardId: number) => void
+  onShare: (reward: RewardItem) => void
+  disabled?: boolean
+}) {
   if (!rewards.length) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-3xl bg-white py-12 shadow-soft">
@@ -18,7 +28,7 @@ export function RewardsGrid({ rewards, onRedeem, disabled }: { rewards: RewardIt
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {rewards.map((reward, i) => (
         <div key={reward.id} style={{ animationDelay: `${i * 80}ms` }}>
-          <RewardCard reward={reward} onRedeem={onRedeem} disabled={disabled} />
+          <RewardCard reward={reward} onRedeem={onRedeem} onShare={onShare} disabled={disabled} />
         </div>
       ))}
     </div>
