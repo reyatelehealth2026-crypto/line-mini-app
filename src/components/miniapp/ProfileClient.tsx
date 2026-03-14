@@ -1,18 +1,14 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useLineContext } from '@/components/providers'
 import { AppShell } from '@/components/miniapp/AppShell'
 import { MemberCard } from '@/components/miniapp/MemberCard'
 import { OdooAccountCard, OdooAccountNotLinked } from '@/components/miniapp/OdooAccountCard'
-import { ProfileForm } from '@/components/miniapp/ProfileForm'
+import { OrderCenterCard } from '@/components/miniapp/OrderCenterCard'
 import { VerifiedOnlyNotice } from '@/components/miniapp/VerifiedOnlyNotice'
-import { getMiniAppCapabilities } from '@/lib/line-miniapp'
-import { checkMember, getMemberCard, updateMemberProfile } from '@/lib/member-api'
+import { checkMember, getMemberCard } from '@/lib/member-api'
 import { getOdooProfile } from '@/lib/odoo-profile-api'
-import { getQuickFillUnavailableReason } from '@/lib/common-profile'
-import type { MemberUpdatePayload } from '@/types/member'
 
 function LoadingSkeleton() {
   return (
@@ -26,7 +22,6 @@ function LoadingSkeleton() {
 export function ProfileClient() {
   const line = useLineContext()
   const lineUserId = line.profile?.userId || ''
-  const capabilities = useMemo(() => getMiniAppCapabilities(), [])
 
   useQuery({
     queryKey: ['member-check', lineUserId],
@@ -46,25 +41,12 @@ export function ProfileClient() {
     enabled: Boolean(lineUserId),
     retry: false
   })
-
-  const updateProfileMutation = useMutation({
-    mutationFn: (payload: MemberUpdatePayload) => updateMemberProfile(payload),
-    onSuccess: () => {
-      void memberQuery.refetch()
-      window.alert('บันทึกข้อมูลสมาชิกสำเร็จ')
-    },
-    onError: (error: unknown) => {
-      window.alert(error instanceof Error ? error.message : 'บันทึกข้อมูลไม่สำเร็จ')
-    }
-  })
+  const isOdooLinked = Boolean(odooProfileQuery.data?.success && odooProfileQuery.data.data)
+  const linkedOdooProfile = isOdooLinked ? odooProfileQuery.data?.data ?? null : null
 
   return (
-    <AppShell title="โปรไฟล์สมาชิก" subtitle="จัดการข้อมูลสมาชิกและดูสถานะแต้มสะสม">
+    <AppShell title="โปรไฟล์สมาชิก" subtitle="ดูข้อมูลสมาชิกและศูนย์การสั่งซื้อ">
       {line.error ? <VerifiedOnlyNotice title="LINE bootstrap issue" description={line.error} /> : null}
-
-      {!capabilities.canUseQuickFill ? (
-        <VerifiedOnlyNotice title="Quick-fill ยังไม่เปิดใช้" description={getQuickFillUnavailableReason()} />
-      ) : null}
 
       {!lineUserId || memberQuery.isLoading ? <LoadingSkeleton /> : null}
 
@@ -73,21 +55,19 @@ export function ProfileClient() {
           <MemberCard member={memberQuery.data.member} tier={memberQuery.data.tier} />
 
           {/* Odoo Account Section */}
-          {odooProfileQuery.data?.success && odooProfileQuery.data.data ? (
-            <OdooAccountCard profile={odooProfileQuery.data.data} />
+          {linkedOdooProfile ? (
+            <OdooAccountCard profile={linkedOdooProfile} />
           ) : !odooProfileQuery.isLoading ? (
             <OdooAccountNotLinked />
           ) : (
             <div className="skeleton h-48 w-full rounded-3xl" />
           )}
 
-          <ProfileForm
-            member={memberQuery.data.member}
-            lineUserId={lineUserId}
-            onSubmit={async (payload) => {
-              await updateProfileMutation.mutateAsync(payload)
-            }}
-          />
+          {!odooProfileQuery.isLoading ? (
+            <OrderCenterCard lineUserId={lineUserId} isLinked={isOdooLinked} />
+          ) : (
+            <div className="skeleton h-64 w-full rounded-3xl" />
+          )}
         </>
       ) : null}
     </AppShell>
