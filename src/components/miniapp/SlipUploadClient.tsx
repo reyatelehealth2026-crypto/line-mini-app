@@ -12,6 +12,39 @@ function nowLocalISO() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+const MAX_DIMENSION = 1200
+const JPEG_QUALITY = 0.7
+
+function compressImage(file: File): Promise<{ base64: string; previewUrl: string; sizeKB: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let { width, height } = img
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, width, height)
+      const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY)
+      const raw = dataUrl.split(',')[1] || ''
+      const sizeKB = Math.round((raw.length * 3) / 4 / 1024)
+      URL.revokeObjectURL(url)
+      resolve({ base64: raw, previewUrl: dataUrl, sizeKB })
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('ไม่สามารถอ่านรูปภาพได้'))
+    }
+    img.src = url
+  })
+}
+
 export function SlipUploadClient() {
   const line = useLineContext()
   const lineUserId = line.profile?.userId || ''
@@ -19,22 +52,28 @@ export function SlipUploadClient() {
 
   const [preview, setPreview] = useState<string | null>(null)
   const [base64, setBase64] = useState<string>('')
+  const [sizeKB, setSizeKB] = useState(0)
   const [amount, setAmount] = useState('')
   const [transferDate, setTransferDate] = useState(nowLocalISO)
   const [submitting, setSubmitting] = useState(false)
+  const [compressing, setCompressing] = useState(false)
   const [result, setResult] = useState<{ matched: boolean; orderName?: string; amount?: number } | null>(null)
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      const dataUrl = reader.result as string
-      setPreview(dataUrl)
-      setBase64(dataUrl.split(',')[1] || '')
+    setCompressing(true)
+    try {
+      const compressed = await compressImage(file)
+      setPreview(compressed.previewUrl)
+      setBase64(compressed.base64)
+      setSizeKB(compressed.sizeKB)
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'ไม่สามารถบีบอัดรูปภาพได้')
+    } finally {
+      setCompressing(false)
     }
-    reader.readAsDataURL(file)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +163,12 @@ export function SlipUploadClient() {
               onClick={() => fileRef.current?.click()}
               className="relative flex h-52 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition-colors hover:border-line hover:bg-line-soft/30"
             >
-              {preview ? (
+              {compressing ? (
+                <div className="flex flex-col items-center gap-2 text-slate-400">
+                  <Loader2 size={32} className="animate-spin" />
+                  <p className="text-sm font-medium">กำลังบีบอัดรูปภาพ...</p>
+                </div>
+              ) : preview ? (
                 <img src={preview} alt="Slip preview" className="h-full w-full object-contain" />
               ) : (
                 <div className="flex flex-col items-center gap-2 text-slate-400">
@@ -140,6 +184,11 @@ export function SlipUploadClient() {
                 className="hidden"
               />
             </div>
+            {sizeKB > 0 ? (
+              <p className="mt-2 text-center text-xs text-slate-400">
+                ขนาดหลังบีบอัด: {sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(1)} MB` : `${sizeKB} KB`}
+              </p>
+            ) : null}
           </div>
         </div>
 

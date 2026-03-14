@@ -1,15 +1,14 @@
-import { phpGet } from '@/lib/php-bridge'
 import { appConfig } from '@/lib/config'
 import type { OdooOrdersResponse } from '@/types/orders'
 
-export async function getMyOrders(lineUserId: string, limit = 20, offset = 0) {
-  return phpGet<OdooOrdersResponse>('/api/odoo-dashboard-api.php', {
-    action: 'odoo_orders',
+export async function getMyOrders(lineUserId: string, limit = 20, offset = 0): Promise<OdooOrdersResponse> {
+  const params = new URLSearchParams({
     line_user_id: lineUserId,
-    line_account_id: appConfig.lineAccountId,
-    limit,
-    offset
+    limit: String(limit),
+    offset: String(offset)
   })
+  const res = await fetch(`/api/odoo-orders?${params}`, { cache: 'no-store' })
+  return res.json() as Promise<OdooOrdersResponse>
 }
 
 export function getOrderTrackingUrl(orderId: number | string) {

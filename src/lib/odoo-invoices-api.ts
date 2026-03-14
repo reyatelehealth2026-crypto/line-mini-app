@@ -28,7 +28,10 @@ export async function uploadSlip(
   amount: string,
   transferDate: string
 ): Promise<OdooSlipUploadResponse> {
-  const res = await fetch('/api/odoo-slip', {
+  // Send directly to PHP backend (not through Vercel proxy)
+  // to avoid Vercel's 4.5MB serverless function payload limit
+  const phpBase = process.env.NEXT_PUBLIC_PHP_API_BASE_URL || 'https://cny.re-ya.com'
+  const res = await fetch(`${phpBase}/api/odoo-slip-upload.php`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
