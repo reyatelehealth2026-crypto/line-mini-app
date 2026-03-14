@@ -1,7 +1,7 @@
 'use client'
 
+import Link from 'next/link'
 import { ExternalLink, FileText, Link2, Package, Receipt, Truck, Wallet } from 'lucide-react'
-import { appConfig } from '@/lib/config'
 import { getOdooLinkUrl } from '@/lib/odoo-profile-api'
 import type { OdooCustomerProfile } from '@/types/odoo-profile'
 
@@ -20,15 +20,13 @@ function QuickActionBtn({ icon: Icon, label, href }: {
   href: string
 }) {
   return (
-    <a
+    <Link
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
       className="flex flex-col items-center gap-2 rounded-2xl bg-slate-50 p-4 transition-colors hover:bg-slate-100"
     >
       <Icon size={22} className="text-line" />
       <span className="text-xs font-semibold text-slate-700">{label}</span>
-    </a>
+    </Link>
   )
 }
 
@@ -37,9 +35,6 @@ type OdooAccountCardProps = {
 }
 
 export function OdooAccountCard({ profile }: OdooAccountCardProps) {
-  const baseUrl = appConfig.apiBaseUrl
-  const acct = appConfig.lineAccountId
-
   const creditLimit = profile.credit_limit ?? 0
   const totalDue = profile.total_due ?? profile.credit_used ?? 0
   const creditRemaining = creditLimit - totalDue
@@ -120,17 +115,17 @@ export function OdooAccountCard({ profile }: OdooAccountCardProps) {
           <QuickActionBtn
             icon={FileText}
             label="ใบแจ้งหนี้"
-            href={`${baseUrl}/liff/odoo-link.php?account=${acct}#/odoo-invoices`}
+            href="/invoices"
           />
           <QuickActionBtn
             icon={Receipt}
             label="แจ้งโอนเงิน"
-            href={`${baseUrl}/liff/odoo-link.php?account=${acct}#/odoo-slip`}
+            href="/slip"
           />
           <QuickActionBtn
             icon={Wallet}
             label="สถานะเครดิต"
-            href={`${baseUrl}/liff/odoo-link.php?account=${acct}#/odoo-credit-status`}
+            href="/credit-status"
           />
         </div>
       </div>
